@@ -5,36 +5,36 @@ enum LoginType { email, phone }
 class User {
   String email;
   String phone;
-
   String _lastName;
   String _firstName;
   LoginType _type;
-
   List<User> friends = <User>[];
 
   User._({String firstName, String lastName, String phone, String email})
       : _firstName = firstName,
         _lastName = lastName,
         this.phone = phone,
-        this.email = email{
-    print("uset is created");
+        this.email = email {
+    print("user is created");
     _type = email != null ? LoginType.email : LoginType.phone;
   }
 
-  User.__(String name){
+  User.__(String name) {
     this._lastName = name;
   }
 
   factory User({String name, String phone, String email}) {
     if (name.isEmpty) throw Exception("User name is empty");
-    if (phone.isEmpty || email.isEmpty)
-      throw Exception("phone or email is empty");
+    /*if (phone.isEmpty || email.isEmpty)
+      throw Exception("phone or email is empty");*/
 
     return User._(
         firstName: _getFirsName(name),
         lastName: _getLastName(name),
-        phone: checkPhone(phone),
-        email: checkEmail(email));
+        email: email != null ? checkEmail(email) : '',
+        phone: phone != null ? checkPhone(phone) : '');
+        /*phone: checkPhone(phone),
+        email: checkEmail(email));*/
   }
 
   static String _getLastName(String userName) => userName.split(" ")[1];
@@ -51,7 +51,6 @@ class User {
       throw Exception(
           "Enter a valid phone number staring with a + and containig 11 digits");
     }
-
     return phone;
   }
 
@@ -102,12 +101,9 @@ class User {
   @override
   String toString() {
     return """"
-  '
   name:$name
   email:$email
   friends:${friends.toList()}
   """;
   }
-
-
 }
