@@ -2,7 +2,7 @@ import '../string_util.dart';
 
 enum LoginType { email, phone }
 
-class User {
+class User with UserUtils {
   String email;
   String phone;
   String _lastName;
@@ -19,10 +19,6 @@ class User {
     _type = email != null ? LoginType.email : LoginType.phone;
   }
 
-  User.__(String name) {
-    this._lastName = name;
-  }
-
   factory User({String name, String phone, String email}) {
     if (name.isEmpty) throw Exception("User name is empty");
     /*if (phone.isEmpty || email.isEmpty)
@@ -33,12 +29,11 @@ class User {
         lastName: _getLastName(name),
         email: email != null ? checkEmail(email) : '',
         phone: phone != null ? checkPhone(phone) : '');
-        /*phone: checkPhone(phone),
+    /*phone: checkPhone(phone),
         email: checkEmail(email));*/
   }
 
   static String _getLastName(String userName) => userName.split(" ")[1];
-
   static String _getFirsName(String userName) => userName.split(" ")[0];
 
   static String checkPhone(String phone) {
@@ -47,16 +42,23 @@ class User {
     phone = phone.replaceAll(RegExp("[^+\\d]"), "");
     if (phone == null || phone.isEmpty) {
       throw Exception("Enter don't empty phone number");
-    } else if (!RegExp(pattern).hasMatch(phone)) {
+    }
+    if (!RegExp(pattern).hasMatch(phone)) {
       throw Exception(
           "Enter a valid phone number staring with a + and containig 11 digits");
     }
+
     return phone;
   }
 
   static String checkEmail(String email) {
+    String pattern =
+        r"^(?!.*@.*@.*$)(?!.*@.*\-\-.*\..*$)(?!.*@.*\-\..*$)(?!.*@.*\-$)(.*@.+(\..{1,11})?)$";
     if (email == null || email.isEmpty) {
       throw Exception("Enter don't empty email");
+    }
+    if (!RegExp(pattern).hasMatch(email)) {
+      throw Exception("Enter a valid email containig @ ");
     }
     return email;
   }
@@ -79,6 +81,7 @@ class User {
           _lastName == object._lastName &&
           (phone == object.phone || email == object.email);
     }
+    return false;
   }
 
   void addFriend(Iterable<User> newFriend) {

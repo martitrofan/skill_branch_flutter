@@ -57,6 +57,14 @@ class UserHolder {
   }
 
   List<User> importUsers(List<String> list) {
-    return null;
+    List<User> users = [];
+
+    for (String str in list) {
+      List<String> data = str.split(';');
+      var user = User(name: data[0].trim(), phone: data[2].trim(), email: data[1].trim());
+      users.add(user);
+    }
+
+    return users;
   }
 }
