@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'screens/feed_screen.dart';
+import 'screens/home.dart';
+
 
 
 class MyApp extends StatelessWidget {
@@ -13,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: Feed(),
+      home: Home(),
     );
   }
 }
