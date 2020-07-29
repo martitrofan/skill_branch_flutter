@@ -1,54 +1,73 @@
-import 'package:FlutterGalleryApp/res/res.dart';
-import 'package:FlutterGalleryApp/screens/feed_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import 'package:FlutterGalleryApp/res/res.dart';
+
+import 'demo_screen.dart';
+import 'feed_screen.dart';
 
 class Home extends StatefulWidget {
   @override
-  _HomeState createState() => _HomeState();
+  State<StatefulWidget> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
-  int currenTab = 0;
+class _HomeState extends State<Home> with TickerProviderStateMixin {
+  int currentTab = 0;
+  final PageStorageBucket bucket = PageStorageBucket();
+
   List<Widget> pages = [
-    Feed(),
+    Feed(key: PageStorageKey('FeedPage')),
     Container(),
     Container(),
+  ];
+
+  final List<BottomNavyBarItem> _tabs = [
+    BottomNavyBarItem(
+      asset: AppIcons.home,
+      title: Text('Feed'),
+      activeColor: AppColors.dodgerBlue,
+      inactiveColor: AppColors.manatee,
+    ),
+    BottomNavyBarItem(
+      asset: AppIcons.home,
+      title: Text('Search'),
+      activeColor: AppColors.dodgerBlue,
+      inactiveColor: AppColors.manatee,
+    ),
+    BottomNavyBarItem(
+      asset: AppIcons.home,
+      title: Text('User'),
+      activeColor: AppColors.dodgerBlue,
+      inactiveColor: AppColors.manatee,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: BottomNavyBar(
-        borderRadius: 8,
+        showElevation: true,
+        itemCornerRadius: 8,
         curve: Curves.ease,
-        itemSelected: (int index) {
-          setState(() {
-            currenTab = index;
-          });
+        items: _tabs,
+        currentTab: currentTab,
+        onItemSelected: (index) async {
+          if (index == 1) {
+            var value = await Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+              return DemoScreen();
+            }));
+
+            print(value);
+          } else
+            setState(() {
+              currentTab = index;
+            });
         },
-        currentTab: currenTab,
-        items: [
-          BottomNavyBarItem(
-            asset: AppIcons.home,
-            title: Text('Feed'),
-            activeColor: AppColors.dodgerBlue,
-            inactiveColor: AppColors.manatee,
-          ),
-          BottomNavyBarItem(
-            asset: AppIcons.home,
-            title: Text('Search'),
-            activeColor: AppColors.dodgerBlue,
-            inactiveColor: AppColors.manatee,
-          ),
-          BottomNavyBarItem(
-            asset: AppIcons.home,
-            title: Text('User'),
-            activeColor: AppColors.dodgerBlue,
-            inactiveColor: AppColors.manatee,
-          ),
-        ],
       ),
-      body: pages[currenTab],
+      body: PageStorage(
+        child: pages[currentTab],
+        bucket: bucket,
+      ),
     );
   }
 }
@@ -56,57 +75,69 @@ class _HomeState extends State<Home> {
 class BottomNavyBar extends StatelessWidget {
   BottomNavyBar({
     Key key,
-    this.backgroundColor = Colors.white,
-    this.showElevation = true,
-    this.containerHeight = 56,
-    this.mainAxisAlignment = MainAxisAlignment.center,
-    this.items,
-    this.itemSelected,
     this.currentTab,
-    this.duration = const Duration(milliseconds: 270),
-    this.borderRadius = 24,
-    this.curve,
-  }) : super(key: key);
+    this.showElevation = true,
+    this.backgroundColor,
+    this.itemCornerRadius = 50,
+    this.containerHeight = 56,
+    this.animationDuration = const Duration(milliseconds: 270),
+    this.mainAxisAlignment = MainAxisAlignment.spaceBetween,
+    @required this.items,
+    @required this.onItemSelected,
+    this.curve = Curves.linear,
+  }) {
+    assert(items != null);
+    assert(items.length >= 2 && items.length <= 5);
+    assert(onItemSelected != null);
+    assert(curve != null);
+  }
 
   final Color backgroundColor;
   final bool showElevation;
-  final double containerHeight;
-  final MainAxisAlignment mainAxisAlignment;
+  final Duration animationDuration;
   final List<BottomNavyBarItem> items;
-  final ValueChanged<int> itemSelected;
-  final int currentTab;
-  final Duration duration;
-  final double borderRadius;
+  final ValueChanged<int> onItemSelected;
+  final MainAxisAlignment mainAxisAlignment;
+  final double itemCornerRadius;
+  final double containerHeight;
   final Curve curve;
+  final int currentTab;
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = (backgroundColor == null) ? Theme.of(context).bottomAppBarColor : backgroundColor;
+
     return Container(
-      decoration: BoxDecoration(color: backgroundColor, boxShadow: [
-        if (showElevation)
-          const BoxShadow(color: Colors.black12, blurRadius: 2),
-      ]),
+      decoration: BoxDecoration(
+        color: bgColor,
+        boxShadow: [
+          if (showElevation)
+            const BoxShadow(
+              color: Colors.black12,
+              blurRadius: 2,
+            ),
+        ],
+      ),
       child: SafeArea(
         child: Container(
           width: double.infinity,
           height: containerHeight,
-          padding: const EdgeInsets.symmetric(
-            vertical: 6,
-            horizontal: 8,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           child: Row(
             mainAxisAlignment: mainAxisAlignment,
             children: items.map((item) {
               var index = items.indexOf(item);
 
               return GestureDetector(
-                onTap: () => itemSelected(index),
+                onTap: () {
+                  onItemSelected(index);
+                },
                 child: _ItemWidget(
                   item: item,
-                  isSelected: currentTab == index,
-                  backgroundColor: backgroundColor,
-                  animationDuration: duration,
-                  borderRadius: borderRadius,
+                  isSelected: currentTab == index ? true : false,
+                  backgroundColor: bgColor,
+                  itemCornerRadius: itemCornerRadius,
+                  animationDuration: animationDuration,
                   curve: curve,
                 ),
               );
@@ -119,66 +150,72 @@ class BottomNavyBar extends StatelessWidget {
 }
 
 class _ItemWidget extends StatelessWidget {
-  _ItemWidget({
-    @required this.isSelected,
+  const _ItemWidget({
+    Key key,
     @required this.item,
+    @required this.isSelected,
     @required this.backgroundColor,
     @required this.animationDuration,
+    @required this.itemCornerRadius,
     this.curve = Curves.linear,
-    @required this.borderRadius,
-  })  : assert(animationDuration != null, 'animationDuration is null'),
-        assert(curve != null, 'curve is null'),
-        assert(isSelected != null, 'isSelected is null'),
-        assert(item != null, 'item is null'),
-        assert(backgroundColor != null, 'backgroundColor is null'),
-        assert(borderRadius != null, 'borderRadius is null');
+  })  : assert(isSelected != null),
+        assert(item != null),
+        assert(backgroundColor != null),
+        assert(animationDuration != null),
+        assert(itemCornerRadius != null),
+        assert(curve != null),
+        super(key: key);
 
   final bool isSelected;
   final BottomNavyBarItem item;
   final Color backgroundColor;
+  final double itemCornerRadius;
   final Duration animationDuration;
   final Curve curve;
-  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      duration: animationDuration,
-      width: isSelected
-          ? 150.0
-          : (MediaQuery.of(context).size.width - 150 - 8 * 4 - 4 * 2) / 2,
+      width: isSelected ? 150 : (MediaQuery.of(context).size.width - 150 - 8 * 4 - 4 * 2) / 2,
       height: double.maxFinite,
+      duration: animationDuration,
       curve: curve,
       decoration: BoxDecoration(
         color: isSelected ? item.activeColor.withOpacity(0.2) : backgroundColor,
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: BorderRadius.circular(itemCornerRadius),
       ),
-      child: Row(
-        children: <Widget>[
-          Icon(
-            item.asset,
-            size: 20,
-            color: isSelected ? item.activeColor : item.inactiveColor,
-          ),
-          SizedBox(width: 4),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-              ),
-              child: DefaultTextStyle.merge(
-                child: item.title,
-                textAlign: item.textAlign,
-                style: TextStyle(
-                  color: isSelected ? item.activeColor : item.inactiveColor,
-                  fontWeight: FontWeight.bold,
+      child: Container(
+        width: isSelected ? 150 : (MediaQuery.of(context).size.width - 150 - 8 * 4 - 4 * 2) / 2,
+        padding: EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              item.asset,
+              size: 20,
+              color: isSelected ? item.activeColor : item.inactiveColor,
+            ),
+            SizedBox(
+              width: 4,
+            ),
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: DefaultTextStyle.merge(
+                  style: TextStyle(
+                    color: isSelected ? item.activeColor : item.inactiveColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  textAlign: item.textAlign,
+                  child: item.title,
                 ),
-                maxLines: 1,
               ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -186,14 +223,14 @@ class _ItemWidget extends StatelessWidget {
 
 class BottomNavyBarItem {
   BottomNavyBarItem({
-    this.asset,
-    this.title,
-    this.activeColor,
-    this.inactiveColor,
+    @required this.asset,
+    @required this.title,
+    this.activeColor = Colors.blue,
     this.textAlign,
+    this.inactiveColor,
   }) {
-    assert(asset != null, 'Asset is null');
-    assert(title != null, 'Asset is null');
+    assert(asset != null);
+    assert(title != null);
   }
 
   final IconData asset;
