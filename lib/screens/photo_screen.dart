@@ -1,10 +1,21 @@
+import 'package:FlutterGalleryApp/widgets/claim_bottom_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-import 'package:FlutterGalleryApp/res/res.dart';
-import 'package:FlutterGalleryApp/widgets/widgets.dart';
+import 'package:flutter/widgets.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import '../widgets/widgets.dart';
+import '../res/res.dart';
 
 class FullScreenImageArguments {
+  final Key key;
+  final String photo;
+  final String altDescription;
+  final String userName;
+  final String name;
+  final String userPhoto;
+  final String heroTag;
+  final RouteSettings settings;
+
   FullScreenImageArguments({
     this.key,
     this.photo,
@@ -15,292 +26,217 @@ class FullScreenImageArguments {
     this.heroTag,
     this.settings,
   });
-
-  final Key key;
-  final String photo;
-  final String altDescription;
-  final String userName;
-  final String name;
-  final String userPhoto;
-  final String heroTag;
-  final RouteSettings settings;
 }
 
 class FullScreenImage extends StatefulWidget {
-  FullScreenImage({
-    this.photo = '',
-    this.altDescription = '',
-    this.userName = '',
-    this.name = '',
-    this.userPhoto = '',
-    this.heroTag,
-    Key key,
-  }) : super(key: key);
+  String altDescription;
+  String userName;
+  String name;
+  String userPhoto;
+  String photo;
+  String heroTag;
 
-  final String photo;
-  final String altDescription;
-  final String userName;
-  final String name;
-  final String userPhoto;
-  final String heroTag;
+  FullScreenImage({photo, userPhoto, Key key, userName, name, altDescription, heroTag})
+      : super(key: key) {
+    this.heroTag = heroTag;
+    this.userName = userName ?? 'guest';
+    this.name = name ?? 'name';
+    this.altDescription = altDescription ?? 'text...';
+    this.photo = photo ??
+        'https://flutter.dev/assets/404/dash_nest-c64796b59b65042a2b40fae5764c13b7477a592db79eaf04c86298dcb75b78ea.png';
+    this.userPhoto = userPhoto ??
+        'https://flutter.dev/assets/404/dash_nest-c64796b59b65042a2b40fae5764c13b7477a592db79eaf04c86298dcb75b78ea.png';
+  }
 
   @override
-  State<StatefulWidget> createState() {
-    return FullScreenImageState();
-  }
+  _FullScreenImageState createState() => _FullScreenImageState();
 }
 
-class FullScreenImageState extends State<FullScreenImage> with TickerProviderStateMixin {
-  AnimationController controller;
-  Animation<double> opacityDescription;
-  Animation<double> opacityAvatar;
+class _FullScreenImageState extends State<FullScreenImage> with TickerProviderStateMixin {
+  AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    controller = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
-
-    opacityDescription = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: controller,
-        curve: Interval(
-          0.5,
-          1.0,
-          curve: Curves.ease,
-        ),
-      ),
-    );
-
-    opacityAvatar = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: controller,
-        curve: Interval(
-          0.0,
-          0.5,
-          curve: Curves.ease,
-        ),
-      ),
-    );
-
-    controller.forward();
+    _controller = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
+    _playAnimation();
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _playAnimation() async {
+    try {
+      await _controller.forward().orCancel;
+    } on TickerCanceled {}
   }
 
   @override
   Widget build(BuildContext context) {
-    print(ModalRoute.of(context).settings.arguments);
-
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        child: Column(
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Photo'),
+          leading: IconButton(
+            icon: Icon(CupertinoIcons.back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          actions: <Widget>[BottomSheetButton()],
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Hero(
               tag: widget.heroTag,
-              child: Photo(photoLink: widget.photo),
+              child: Photo(photoLink: widget.userPhoto),
             ),
-            const SizedBox(height: 11),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Text(
                 widget.altDescription,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: AppStyles.h3,
+                style: Theme.of(context).textTheme.headline3,
               ),
             ),
-            const SizedBox(height: 9),
-            _buildPhotoMeta(),
-            const SizedBox(height: 17),
-            _buildActionButton(),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (BuildContext context, Widget child) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Row(
+                    children: <Widget>[
+                      Opacity(
+                        opacity: buildAnimationUserAvatar(),
+                        child: UserAvatar('https://skill-branch.ru/img/speakers/Adechenko.jpg'),
+                      ),
+                      SizedBox(width: 6.0),
+                      Opacity(
+                        opacity: buildAnimationUserMeta(),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(widget.name, style: Theme.of(context).textTheme.headline1),
+                            Text(
+                              '@' + widget.userName,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline5
+                                  .copyWith(color: AppColors.manatee),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  LikeButton(likeCount: 10, isLiked: true),
+                  Row(
+                    children: <Widget>[
+                      _buildButton(txt: 'Save', needDialog: true),
+                      SizedBox(width: 10),
+                      _buildButton(txt: 'Visit'),
+                    ],
+                  ),
+                ],
+              ),
+            )
           ],
         ),
       ),
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      elevation: 0,
-      actions: <Widget>[
-        IconButton(
-            icon: Icon(
-              Icons.more_vert,
-              color: AppColors.grayChateau,
-            ),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (BuildContext context) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.mercury,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(10, (index) => FlutterLogo()),
-                    ),
-                  );
-                },
-              );
-            })
-      ],
-      leading: IconButton(
-        icon: Icon(
-          CupertinoIcons.back,
-          color: AppColors.grayChateau,
-        ),
-        onPressed: () => Navigator.pop(context),
+  double buildAnimationUserMeta() {
+    return Tween<double>(begin: 0.0, end: 1.0)
+        .animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.5, 1.0, curve: Curves.ease),
       ),
-      backgroundColor: AppColors.white,
-      centerTitle: true,
-      title: Text(
-        'Photo',
-        style: AppStyles.h2Black,
-      ),
-    );
+    )
+        .value;
   }
 
-  Widget _buildPhotoMeta() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      child: Row(
-        children: [
-          AnimatedBuilder(
-            animation: controller,
-            child: UserAvatar(widget.userPhoto),
-            builder: (context, Widget child) {
-              return Opacity(opacity: opacityAvatar.value, child: child);
-            },
-          ),
-          SizedBox(width: 10),
-          AnimatedBuilder(
-            animation: controller,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-              Text(
-              widget.name,
-              style: AppStyles.h1Black,
-            ),
-            Text("@${widget.userName}", style: AppStyles.h5Black.copyWith(color: AppColors.manatee)),
-            ],
-            ),
-            builder: (context, Widget child) {
-              return Opacity(opacity: opacityDescription.value, child: child);
-            },
-          ),
-        ],
+  double buildAnimationUserAvatar() {
+    return Tween<double>(begin: 0.0, end: 1.0)
+        .animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.0, 0.5, curve: Curves.ease),
       ),
-    );
+    )
+        .value;
   }
 
-  Widget _buildActionButton() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          LikeButton(),
-          SizedBox(
-            width: 14,
-          ),
-          Expanded(
-            child: _buildButton('Save', () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text("Alert Dialog title"),
-                    content: Text("Alert Dialog body"),
-                    actions: <Widget>[
-                    FlatButton(
-                    child: Text("Ok"),
-                    onPressed: () {
-                  Navigator.of(context).pop();
-                  },
-                  ),
-                  FlatButton(
-                  child: Text("Close"),
-                  onPressed: () {
-                  Navigator.of(context).pop();
-                  },
-                  ),
-                  ],
-                  );
-                },
-              );
-            }),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildButton('Visit', () async {
-              OverlayState overlayState = Overlay.of(context);
-
-              OverlayEntry overlayEntry = OverlayEntry(
-                  builder: (BuildContext context) => Positioned(
-                      top: MediaQuery.of(context).viewInsets.top + 50,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: Container(
-                            alignment: Alignment.center,
-                            width: MediaQuery.of(context).size.width,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.mercury,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              margin: EdgeInsets.symmetric(horizontal: 20),
-                              padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
-                              child: Text(
-                                'SkillBranch',
-                              ),
-                            ),
-                          ),
-                        ),
-                      )));
-              overlayState.insert(overlayEntry);
-              await new Future.delayed(Duration(seconds: 1));
-              overlayEntry?.remove();
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildButton(String text, VoidCallback callback) {
+  Widget _buildButton({String txt = 'Button', bool needDialog = false}) {
     return GestureDetector(
-      onTap: callback,
+      onTap: () {
+        needDialog
+            ? showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Downloading photos'),
+              content: Text('Are you sure you want to upload a photo?'),
+              elevation: 24,
+              actions: <Widget>[
+                FlatButton(
+                  child: Text('Download'),
+                  onPressed: () async {
+                    await GallerySaver.saveImage(widget.photo);
+                    Navigator.pop(context);
+                  },
+                ),
+                FlatButton(
+                  child: Text('Close'),
+                  onPressed: () => Navigator.pop(context),
+                )
+              ],
+            );
+          },
+        )
+            : '';
+      },
       child: Container(
-        alignment: Alignment.center,
-        height: 36,
         decoration: BoxDecoration(
           color: AppColors.dodgerBlue,
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(8.0),
         ),
-        child: Text(
-          text,
-          style: AppStyles.h4.copyWith(color: AppColors.white),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 50.0, vertical: 10.0),
+          child: Text(txt, style: TextStyle(color: Colors.white, fontSize: 18)),
         ),
       ),
+    );
+  }
+}
+
+class BottomSheetButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.more_vert),
+      color: AppColors.grayChateau,
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (context) => ClaimBottomSheet(),
+        );
+      },
     );
   }
 }

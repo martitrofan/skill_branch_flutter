@@ -1,8 +1,8 @@
-import 'package:FlutterGalleryApp/res/res.dart';
 import 'package:FlutterGalleryApp/screens/photo_screen.dart';
-import 'package:FlutterGalleryApp/widgets/widgets.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import '../res/res.dart';
+import '../widgets/widgets.dart';
 
 const String kFlutterDash =
     'https://flutter.dev/assets/404/dash_nest-c64796b59b65042a2b40fae5764c13b7477a592db79eaf04c86298dcb75b78ea.png';
@@ -14,26 +14,30 @@ class Feed extends StatefulWidget {
   _FeedState createState() => _FeedState();
 }
 
-class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
+class _FeedState extends State<Feed> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView.builder(
-        itemCount: 10,
-        itemBuilder: (BuildContext context, int index) {
-          return Column(
-            children: <Widget>[
-              _buildItem(index),
-              Divider(thickness: 2, color: AppColors.mercury),
-            ],
-          );
-        },
+    return SafeArea(
+      child: Scaffold(
+        body: ListView.builder(
+          itemCount: 10,
+          itemBuilder: (BuildContext context, int index) {
+            return Column(
+              children: <Widget>[
+                _buildItem(index),
+                Divider(
+                  thickness: 2.0,
+                  color: AppColors.mercury,
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildItem(int index) {
-    final heroTag = 'feedItem_$index';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -44,16 +48,18 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
               '/fullScreenImage',
               arguments: FullScreenImageArguments(
                   photo: kFlutterDash,
-                  altDescription: 'This is Flutter dash. I love him :)',
+                  userPhoto: kFlutterDash,
                   userName: 'kaparray',
                   name: 'Kirill Adeshchenko',
-                  userPhoto:
-                      'https://skill-branch.ru/img/speakers/Adechenko.jpg',
-                  heroTag: heroTag,
+                  altDescription: 'This is Flutter dash. I love him :)',
+                  heroTag: 'photo_$index',
                   settings: RouteSettings(arguments: kFlutterDash)),
             );
           },
-          child: Hero(tag: heroTag, child: Photo(photoLink: kFlutterDash)),
+          child: Hero(
+            tag: 'photo_$index',
+            child: Photo(photoLink: kFlutterDash),
+          ),
         ),
         _buildPhotoMeta(index),
         Padding(
@@ -62,9 +68,10 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
             'This is Flutter dash. I love him :)',
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: AppStyles.h3.copyWith(color: AppColors.manatee),
+            style: Theme.of(context).textTheme.headline3.copyWith(color: AppColors.manatee),
+//            style: AppStyles.h3.copyWith(color: AppColors.manatee),
           ),
-        ),
+        )
       ],
     );
   }
@@ -78,15 +85,15 @@ class _FeedState extends State<Feed> with SingleTickerProviderStateMixin {
           Row(
             children: <Widget>[
               UserAvatar('https://skill-branch.ru/img/speakers/Adechenko.jpg'),
-              SizedBox(width: 6),
+              SizedBox(width: 6.0),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Kirill Adeshchenko', style: AppStyles.h2Black),
-                  Text("@kaparray",
+                  Text('Kirill Adeshchenko', style: Theme.of(context).textTheme.headline2),
+                  Text('@kaparray',
                       style:
-                          AppStyles.h5Black.copyWith(color: AppColors.manatee)),
+                      Theme.of(context).textTheme.headline5.copyWith(color: AppColors.manatee)),
                 ],
               ),
             ],
